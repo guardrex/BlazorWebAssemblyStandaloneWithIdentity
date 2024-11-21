@@ -24,14 +24,6 @@ public class SeedData
             RoleList = [ "User" ],
             UserName = "harry@contoso.com"
         },
-        new SeedUser()
-        {
-            Email = "luke@lukelatham.com",
-            NormalizedEmail = "LUKE@LUKELATHAM.COM",
-            NormalizedUserName = "LUKE@LUKELATHAM.COM",
-            RoleList = [ "User" ],
-            UserName = "luke@lukelatham.com"
-        },
     ];
 
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
