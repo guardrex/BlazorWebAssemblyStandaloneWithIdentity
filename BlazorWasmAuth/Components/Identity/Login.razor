@@ -1,0 +1,165 @@
+@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using BlazorWasmAuth.Identity
+@using BlazorWasmAuth.Identity.Models
+@inject IAccountManagement Acct
+@inject ILogger<Login> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<h1>Login</h1>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="alert alert-success">
+            You're logged in as @context.User.Identity?.Name.
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @foreach (var error in formResult.ErrorList)
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+        <div class="row">
+            <div class="col">
+                <section>
+                    <EditForm Model="Input" 
+                              method="post" 
+                              OnValidSubmit="LoginUser" 
+                              FormName="login" 
+                              Context="editform_context">
+                        <DataAnnotationsValidator />
+                        <h2>Use a local account to log in.</h2>
+                        <hr />
+                        <div style="display:@(requiresTwoFactor ? "none" : "block")">
+                            <div class="form-floating mb-3">
+                                <InputText 
+                                    @bind-Value="Input.Email" 
+                                    id="Input.Email" 
+                                    class="form-control" 
+                                    autocomplete="username" 
+                                    aria-required="true" 
+                                    placeholder="name@example.com" />
+                                <label for="Input.Email" class="form-label">
+                                    Email
+                                </label>
+                                <ValidationMessage 
+                                    For="() => Input.Email" 
+                                    class="text-danger" />
+                            </div>
+                            <div class="form-floating mb-3">
+                                <InputText 
+                                    type="password" 
+                                    @bind-Value="Input.Password" 
+                                    id="Input.Password" 
+                                    class="form-control" 
+                                    autocomplete="current-password" 
+                                    aria-required="true" 
+                                    placeholder="password" />
+                                <label for="Input.Password" class="form-label">
+                                    Password
+                                </label>
+                                <ValidationMessage 
+                                    For="() => Input.Password" 
+                                    class="text-danger" />
+                            </div>
+                        </div>
+                        <div style="display:@(requiresTwoFactor ? "block" : "none")">
+                            <div class="form-floating mb-3">
+                                <InputText @bind-Value="Input.TwoFactorCode" 
+                                    id="Input.TwoFactorCode" class="form-control" 
+                                    autocomplete="off" 
+                                    placeholder="123456 or 12345-67890" />
+                                <label for="Input.TwoFactorCode" class="form-label">
+                                    2FA Authenticator code (6 digits) or Recovery 
+                                    Code (#####-#####, dash required)
+                                </label>
+                                <ValidationMessage 
+                                    For="() => Input.TwoFactorCode" 
+                                    class="text-danger" />
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-100 btn btn-lg btn-primary">
+                                Log in
+                            </button>
+                        </div>
+                        <div>
+                            <p>
+                                <a href="forgot-password">Forgot password</a>
+                            </p>
+                            <p>
+                                <a href="register">Register as a new user</a>
+                            </p>
+                        </div>
+                    </EditForm>
+                </section>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private FormResult formResult = new();
+    private bool requiresTwoFactor;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    public async Task LoginUser()
+    {
+        if (requiresTwoFactor)
+        {
+            if (!string.IsNullOrEmpty(Input.TwoFactorCode))
+            {
+                if (Input.TwoFactorCode.Length == 6)
+                {
+                    formResult = await Acct.LoginTwoFactorCodeAsync(
+                        Input.Email, Input.Password, Input.TwoFactorCode);
+                }
+                else
+                {
+                    formResult = await Acct.LoginTwoFactorRecoveryCodeAsync(
+                        Input.Email, Input.Password, Input.TwoFactorCode);
+                }
+            }
+        }
+        else
+        {
+            formResult = await Acct.LoginAsync(Input.Email, Input.Password);
+            requiresTwoFactor = formResult.ErrorList.Contains("RequiresTwoFactor");
+            Input.TwoFactorCode = string.Empty;
+            formResult.ErrorList = [];
+        }
+
+        if (formResult.Succeeded && !string.IsNullOrEmpty(ReturnUrl))
+        {
+            Navigation.NavigateTo(ReturnUrl);
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [RegularExpression(@"^([0-9]{6})|([A-Z0-9]{5}[-]{1}[A-Z0-9]{5})$", 
+            ErrorMessage = "Must be a six-digit authenticator code (######) or " +
+            "eleven-character alphanumeric recovery code (#####-#####, dash " +
+            "required)")]
+        [Display(Name = "Two-factor code")]
+        public string TwoFactorCode { get; set; } = "123456";
+    }
+}

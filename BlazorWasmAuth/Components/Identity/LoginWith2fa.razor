@@ -1,0 +1,106 @@
+﻿@page "/login-with-2fa"
+@using System.ComponentModel.DataAnnotations
+@using BlazorWasmAuth.Identity
+@using BlazorWasmAuth.Identity.Models
+@inject IAccountManagement Acct
+@inject ILogger<LoginWith2fa> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Two-factor authentication</PageTitle>
+
+<h1>Two-factor authentication</h1>
+<hr />
+<AuthorizeView>
+    <Authorized>
+        <div class="alert alert-success">You're logged in as @context.User.Identity?.Name.</div>
+    </Authorized>
+    <NotAuthorized>
+        @if (formResult?.ErrorList is not null)
+        {
+            @foreach (var error in formResult.ErrorList)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+        }
+        <p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+        <div class="row">
+            <div class="col">
+                <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post" Context="editform_context">
+                    <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                    <DataAnnotationsValidator />
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                        <label for="Input.Email" class="form-label">Email</label>
+                        <ValidationMessage For="() => Input.Email" class="text-danger" />
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                        <label for="Input.Password" class="form-label">Password</label>
+                        <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.TwoFactorCode" id="Input.TwoFactorCode" class="form-control" autocomplete="off" />
+                        <label for="Input.TwoFactorCode" class="form-label">Authenticator code</label>
+                        <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
+                    </div>
+                    <!-- div class="checkbox mb-3">
+                    <label for="remember-machine" class="form-label">
+                        <InputCheckbox @@bind-Value="Input.RememberMachine" />
+                        Remember this machine
+                    </label>
+                    </div -->
+                    <div>
+                        <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+        <p>
+            Don't have access to your authenticator device? You can
+            <a href="login-with-recovery-code?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
+        </p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private FormResult? formResult;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private async Task OnValidSubmitAsync()
+    {
+        var twoFactorCode = Input.TwoFactorCode!.Replace(" ", string.Empty).Replace("-", string.Empty);
+        formResult = await Acct.LoginTwoFactorCodeAsync(Input.Email, Input.Password, twoFactorCode);
+
+        if (formResult.Succeeded && !string.IsNullOrEmpty(ReturnUrl))
+        {
+            Navigation.NavigateTo(ReturnUrl);
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(6, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Text)]
+        [Display(Name = "Authenticator code")]
+        public string? TwoFactorCode { get; set; }
+
+        //[Display(Name = "Remember this machine")]
+        //public bool RememberMachine { get; set; }
+    }
+}

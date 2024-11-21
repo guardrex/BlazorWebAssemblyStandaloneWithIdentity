@@ -1,0 +1,219 @@
+@page "/manage-2fa"
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Text
+@using System.Text.Encodings.Web
+@using BlazorWasmAuth.Identity
+@using BlazorWasmAuth.Identity.Models
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IAccountManagement Acct
+@inject IAuthorizationService AuthorizationService
+@inject IConfiguration Config
+@inject IJSRuntime JS
+@inject ILogger<Manage2fa> Logger
+
+<PageTitle>Manage 2FA</PageTitle>
+
+<h1>Manage Two-factor Authentication</h1>
+<hr />
+<div class="row">
+    <div class="col">
+        @if (twoFactorResult is not null)
+        {
+            @foreach (var error in twoFactorResult.ErrorList)
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+
+            @if (twoFactorResult.IsTwoFactorEnabled)
+            {
+                <div class="alert alert-success" role="alert">
+                    Two-factor authentication is enabled for your account.
+                </div>
+
+                <div class="m-1">
+                    <button @onclick="Disable2FA" class="btn btn-lg btn-primary">
+                        Disable 2FA
+                    </button>
+                </div>
+
+                @if (recoveryCodes is null)
+                {
+                    <div class="m-1">
+                        <button @onclick="GenerateNewCodes" 
+                                class="btn btn-lg btn-primary">
+                            Generate New Recovery Codes
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <ShowRecoveryCodes 
+                        RecoveryCodes="twoFactorResult.RecoveryCodes.ToArray()" />
+                }
+            }
+            else
+            {
+                <h3>Configure authenticator app</h3>
+                <div>
+                    <p>To use an authenticator app:</p>
+                    <ol class="list">
+                        <li>
+                            <p>
+                                Download a two-factor authenticator app, such 
+                                as either of the following:
+                                <ul>
+                                    <li>
+                                        Microsoft Authenticator for
+                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825072">
+                                            Android
+                                        </a> and
+                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825073">
+                                            iOS
+                                        </a>
+                                    </li>
+                                    <li>
+                                        Google Authenticator for
+                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">
+                                            Android
+                                        </a> and
+                                        <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">
+                                            iOS
+                                        </a>
+                                    </li>
+                                </ul>
+                            </p>
+                        </li>
+                        <li>
+                            <p>
+                                Scan the QR Code or enter this key 
+                                <kbd>@twoFactorResult.SharedKey</kbd> into your 
+                                two factor authenticator app. Spaces and casing 
+                                don't matter.
+                            </p>
+                            <div @ref="qrCodeElement"></div>
+                        </li>
+                        <li>
+                            <p>
+                                Once you have scanned the QR code or input the 
+                                key above, your two factor authentication app 
+                                will provide you with a unique code. Enter the 
+                                code in the confirmation box below.
+                            </p>
+                            <div class="row">
+                                <div class="col-xl-6">
+                                    <EditForm 
+                                    Model="Input" 
+                                    FormName="send-code" 
+                                    OnValidSubmit="OnValidSubmitAsync" 
+                                    method="post">
+                                        <DataAnnotationsValidator />
+                                        <div class="form-floating mb-3">
+                                            <InputText 
+                                            @bind-Value="Input.Code" 
+                                            id="Input.Code" 
+                                            class="form-control" 
+                                            autocomplete="off" 
+                                            placeholder="Enter the code" />
+                                            <label for="Input.Code" class="control-label form-label">
+                                                Verification Code
+                                            </label>
+                                            <ValidationMessage 
+                                            For="() => Input.Code" 
+                                            class="text-danger" />
+                                        </div>
+                                        <button type="submit" class="w-100 btn btn-lg btn-primary">
+                                            Verify
+                                        </button>
+                                    </EditForm>
+                                </div>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<string>? recoveryCodes;
+    private IJSObjectReference? module;
+    private TwoFactorResult twoFactorResult = new();
+    private ElementReference qrCodeElement;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        twoFactorResult = await Acct.TwoFactorRequest();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import",
+                "./Components/Identity/Manage2fa.razor.js");
+        }
+
+        if (authenticationState is not null &&
+            !string.IsNullOrEmpty(twoFactorResult?.SharedKey) &&
+            module is not null)
+        {
+            var authState = await authenticationState;
+            var email = authState?.User?.Identity?.Name!;
+
+            var uri = string.Format(
+                CultureInfo.InvariantCulture,
+                "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
+                UrlEncoder.Default.Encode(Config["TotpOrganizationName"]!),
+                email,
+                twoFactorResult?.SharedKey);
+
+            await module.InvokeVoidAsync("setQrCode", qrCodeElement, uri);
+        }
+    }
+
+    private async Task Disable2FA()
+    {
+        twoFactorResult = 
+            await Acct.TwoFactorRequest(enable: false, resetSharedKey: true);
+    }
+
+    private async Task GenerateNewCodes()
+    {
+        twoFactorResult = 
+            await Acct.TwoFactorRequest(enable: false, resetRecoveryCodes: true);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        twoFactorResult = await Acct.TwoFactorRequest(enable: true, 
+            twoFactorCode: Input.Code);
+        recoveryCodes = twoFactorResult.RecoveryCodes;
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [RegularExpression(@"^([0-9]{6})$", 
+            ErrorMessage = "Must be a six-digit authenticator code (######)")]
+        [DataType(DataType.Text)]
+        [Display(Name = "Verification Code")]
+        public string Code { get; set; } = string.Empty;
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

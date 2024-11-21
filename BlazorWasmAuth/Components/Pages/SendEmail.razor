@@ -1,0 +1,23 @@
+﻿@page "/send-email"
+@inject IHttpClientFactory ClientFactory
+
+<h1>Send Email</h1>
+
+<button @onclick="SendEmailMsg">Send Test Email</button>
+
+<p>
+    Status Code: @result
+</p>
+
+@code {
+    private string? result;
+
+    private async Task SendEmailMsg()
+    {
+        var client = ClientFactory.CreateClient("Auth");
+
+        var response = await client.GetAsync("send-email");
+
+        result = response.StatusCode.ToString();
+    }
+}
