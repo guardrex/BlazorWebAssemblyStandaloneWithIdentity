@@ -33,24 +33,18 @@
                 </div>
 
                 <div class="m-1">
-                    <button @onclick="Disable2FA" class="btn btn-lg btn-primary">
-                        Disable 2FA
-                    </button>
+                    <button @onclick="Disable2FA" class="btn btn-lg btn-primary">Disable 2FA</button>
                 </div>
 
                 @if (recoveryCodes is null)
                 {
                     <div class="m-1">
-                        <button @onclick="GenerateNewCodes" 
-                                class="btn btn-lg btn-primary">
-                            Generate New Recovery Codes
-                        </button>
+                        <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
                     </div>
                 }
                 else
                 {
-                    <ShowRecoveryCodes 
-                        RecoveryCodes="twoFactorResult.RecoveryCodes.ToArray()" />
+                    <ShowRecoveryCodes RecoveryCodes="twoFactorResult.RecoveryCodes.ToArray()" />
                 }
             }
             else
@@ -61,71 +55,40 @@
                     <ol class="list">
                         <li>
                             <p>
-                                Download a two-factor authenticator app, such 
-                                as either of the following:
+                                Download a two-factor authenticator app, such as either of the following:
                                 <ul>
                                     <li>
                                         Microsoft Authenticator for
-                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825072">
-                                            Android
-                                        </a> and
-                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825073">
-                                            iOS
-                                        </a>
+                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a>
                                     </li>
                                     <li>
                                         Google Authenticator for
-                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">
-                                            Android
-                                        </a> and
-                                        <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">
-                                            iOS
-                                        </a>
+                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>
                                     </li>
                                 </ul>
                             </p>
                         </li>
                         <li>
                             <p>
-                                Scan the QR Code or enter this key 
-                                <kbd>@twoFactorResult.SharedKey</kbd> into your 
-                                two factor authenticator app. Spaces and casing 
-                                don't matter.
+                                Scan the QR Code or enter this key <kbd>@twoFactorResult.SharedKey</kbd> into your two factor authenticator app. Spaces and casing don't matter.
                             </p>
                             <div @ref="qrCodeElement"></div>
                         </li>
                         <li>
                             <p>
-                                Once you have scanned the QR code or input the 
-                                key above, your two factor authentication app 
-                                will provide you with a unique code. Enter the 
-                                code in the confirmation box below.
+                                Once you have scanned the QR code or input the key above, your two factor authentication app 
+                                will provide you with a unique code. Enter the code in the confirmation box below.
                             </p>
                             <div class="row">
                                 <div class="col-xl-6">
-                                    <EditForm 
-                                    Model="Input" 
-                                    FormName="send-code" 
-                                    OnValidSubmit="OnValidSubmitAsync" 
-                                    method="post">
+                                    <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
                                         <DataAnnotationsValidator />
                                         <div class="form-floating mb-3">
-                                            <InputText 
-                                            @bind-Value="Input.Code" 
-                                            id="Input.Code" 
-                                            class="form-control" 
-                                            autocomplete="off" 
-                                            placeholder="Enter the code" />
-                                            <label for="Input.Code" class="control-label form-label">
-                                                Verification Code
-                                            </label>
-                                            <ValidationMessage 
-                                            For="() => Input.Code" 
-                                            class="text-danger" />
+                                            <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code" />
+                                            <label for="Input.Code" class="control-label form-label">Verification Code</label>
+                                            <ValidationMessage For="() => Input.Code" class="text-danger" />
                                         </div>
-                                        <button type="submit" class="w-100 btn btn-lg btn-primary">
-                                            Verify
-                                        </button>
+                                        <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
                                     </EditForm>
                                 </div>
                             </div>
@@ -158,13 +121,10 @@
     {
         if (firstRender)
         {
-            module = await JS.InvokeAsync<IJSObjectReference>("import",
-                "./Components/Identity/Manage2fa.razor.js");
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Identity/Manage2fa.razor.js");
         }
 
-        if (authenticationState is not null &&
-            !string.IsNullOrEmpty(twoFactorResult?.SharedKey) &&
-            module is not null)
+        if (authenticationState is not null && !string.IsNullOrEmpty(twoFactorResult?.SharedKey) && module is not null)
         {
             var authState = await authenticationState;
             var email = authState?.User?.Identity?.Name!;
@@ -182,28 +142,24 @@
 
     private async Task Disable2FA()
     {
-        twoFactorResult = 
-            await Acct.TwoFactorRequest(enable: false, resetSharedKey: true);
+        twoFactorResult = await Acct.TwoFactorRequest(enable: false, resetSharedKey: true);
     }
 
     private async Task GenerateNewCodes()
     {
-        twoFactorResult = 
-            await Acct.TwoFactorRequest(enable: false, resetRecoveryCodes: true);
+        twoFactorResult = await Acct.TwoFactorRequest(enable: false, resetRecoveryCodes: true);
     }
 
     private async Task OnValidSubmitAsync()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(enable: true, 
-            twoFactorCode: Input.Code);
+        twoFactorResult = await Acct.TwoFactorRequest(enable: true, twoFactorCode: Input.Code);
         recoveryCodes = twoFactorResult.RecoveryCodes;
     }
 
     private sealed class InputModel
     {
         [Required]
-        [RegularExpression(@"^([0-9]{6})$", 
-            ErrorMessage = "Must be a six-digit authenticator code (######)")]
+        [RegularExpression(@"^([0-9]{6})$", ErrorMessage = "Must be a six-digit authenticator code (######)")]
         [DataType(DataType.Text)]
         [Display(Name = "Verification Code")]
         public string Code { get; set; } = string.Empty;
