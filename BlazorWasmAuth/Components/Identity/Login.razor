@@ -105,7 +105,7 @@
     private bool requiresTwoFactor;
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
+    private InputModel Input { get; set; } = new() { Email = "leela@contoso.com", Password = "Passw0rd!" };
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }

@@ -78,7 +78,7 @@ namespace BlazorWasmAuth.Identity
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
         public Task<TwoFactorResult> TwoFactorRequest(
             bool enable = false, 
-            string twoFactorCode = string.Empty, 
+            string twoFactorCode = "", 
             bool resetSharedKey = false, 
             bool resetRecoveryCodes = false, 
             bool forgetMachine = false);
