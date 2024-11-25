@@ -436,17 +436,17 @@ namespace BlazorWasmAuth.Identity
                 if (resetSharedKey)
                 {
                     response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { enable, resetSharedKey });
+                        new { resetSharedKey });
                 }
                 else if (resetRecoveryCodes)
                 {
                     response = await httpClient.PostAsJsonAsync("manage/2fa",
-                        new { enable, resetRecoveryCodes });
+                        new { resetRecoveryCodes });
                 }
                 else if (forgetMachine)
                 {
                     response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { enable, forgetMachine });
+                        new { forgetMachine });
                 }
                 else if (!string.IsNullOrEmpty(twoFactorCode))
                 {
