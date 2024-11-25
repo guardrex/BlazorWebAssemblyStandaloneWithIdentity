@@ -25,7 +25,6 @@
             {
                 <div class="alert alert-danger">@error</div>
             }
-
             @if (twoFactorResult.IsTwoFactorEnabled)
             {
                 <div class="alert alert-success" role="alert">
@@ -36,7 +35,7 @@
                     <button @onclick="Disable2FA" class="btn btn-lg btn-primary">Disable 2FA</button>
                 </div>
 
-                @if (recoveryCodes is null)
+                @if (twoFactorResult.RecoveryCodes is null)
                 {
                     <div class="m-1">
                         <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
@@ -44,7 +43,7 @@
                 }
                 else
                 {
-                    <ShowRecoveryCodes RecoveryCodes="twoFactorResult.RecoveryCodes.ToArray()" />
+                    <ShowRecoveryCodes RecoveryCodes="twoFactorResult.RecoveryCodes" />
                 }
             }
             else
@@ -134,7 +133,7 @@
                 "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
                 UrlEncoder.Default.Encode(Config["TotpOrganizationName"]!),
                 email,
-                twoFactorResult?.SharedKey);
+                twoFactorResult.SharedKey);
 
             await module.InvokeVoidAsync("setQrCode", qrCodeElement, uri);
         }
@@ -142,18 +141,18 @@
 
     private async Task Disable2FA()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(enable: false, resetSharedKey: true);
+        twoFactorResult = await Acct.TwoFactorRequest(resetSharedKey: true);
     }
 
     private async Task GenerateNewCodes()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(enable: false, resetRecoveryCodes: true);
+        twoFactorResult = await Acct.TwoFactorRequest(resetRecoveryCodes: true);
     }
 
     private async Task OnValidSubmitAsync()
     {
         twoFactorResult = await Acct.TwoFactorRequest(enable: true, twoFactorCode: Input.Code);
-        recoveryCodes = twoFactorResult.RecoveryCodes;
+        Input.Code = string.Empty;
     }
 
     private sealed class InputModel

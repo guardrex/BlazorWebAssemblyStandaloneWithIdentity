@@ -1,5 +1,5 @@
 ﻿export function setQrCode(qrCodeElement, uri) {
-  if (qrCodeElement !== null) {
+  if (qrCodeElement !== null && !qrCodeElement.innerHTML.trim()) {
     QrCreator.render({
       text: uri,
       radius: 0,
