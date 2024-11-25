@@ -76,10 +76,9 @@
                                 <InputText @bind-Value="Input.TwoFactorCode" 
                                     id="Input.TwoFactorCode" class="form-control" 
                                     autocomplete="off" 
-                                    placeholder="123456 or 12345-67890" />
+                                    placeholder="###### or #####-##### (dash required)" />
                                 <label for="Input.TwoFactorCode" class="form-label">
-                                    2FA Authenticator code (6 digits) or Recovery 
-                                    Code (#####-#####, dash required)
+                                    2FA Authenticator Code or Recovery Code
                                 </label>
                                 <ValidationMessage 
                                     For="() => Input.TwoFactorCode" 
