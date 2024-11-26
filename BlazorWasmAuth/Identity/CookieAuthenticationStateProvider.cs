@@ -138,7 +138,7 @@ namespace BlazorWasmAuth.Identity
                 else if (result.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     var responseJson = await result.Content.ReadAsStringAsync();
-                    var response = JsonSerializer.Deserialize<HttpResponseContent>(
+                    var response = JsonSerializer.Deserialize<LoginResponse>(
                         responseJson, jsonSerializerOptions);
 
                     if (response?.Detail == "RequiresTwoFactor")
@@ -305,15 +305,6 @@ namespace BlazorWasmAuth.Identity
             return authenticated;
         }
 
-        public class RoleClaim
-        {
-            public string? Issuer { get; set; }
-            public string? OriginalIssuer { get; set; }
-            public string? Type { get; set; }
-            public string? Value { get; set; }
-            public string? ValueType { get; set; }
-        }
-
         /// <summary>
         /// Begin the password recovery process by issuing a POST request to the /forgotPassword endpoint.
         /// </summary>
@@ -412,13 +403,9 @@ namespace BlazorWasmAuth.Identity
         }
 
         /// <summary>
-        /// Initial POST request to the two-factor authentication endpoint.
+        /// Sends requests to the two-factor authentication endpoint for two-factor account management.
         /// </summary>
-        /// <param name="enable">A flag indicating 2FA status.</param>
-        /// <param name="twoFactorCode">The two-factor authentication code supplied by the user's 2FA app.</param>
-        /// <param name="resetSharedKey">A flag indicating if the shared key should be reset.</param>
-        /// <param name="resetRecoveryCodes">A flag indicating if the recovery codes should be reset.</param>
-        /// <param name="forgetMachine">A flag indicating if the machine should be forgotten.</param>
+        /// <param name="twoFactorRequest">A set of optional parameters in <see cref="TwoFactorRequest"/> for 2FA management requests.</param>
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
         public async Task<TwoFactorResult> TwoFactorRequest(TwoFactorRequest twoFactorRequest)
         {
@@ -427,34 +414,6 @@ namespace BlazorWasmAuth.Identity
 
             var response = await httpClient.PostAsJsonAsync("manage/2fa", twoFactorRequest, jsonSerializerOptions);
 
-            /*
-            if (resetSharedKey)
-            {
-                response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                    new { resetSharedKey });
-            }
-            else if (resetRecoveryCodes)
-            {
-                response = await httpClient.PostAsJsonAsync("manage/2fa",
-                    new { resetRecoveryCodes });
-            }
-            else if (forgetMachine)
-            {
-                response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                    new { forgetMachine });
-            }
-            else if (!string.IsNullOrEmpty(twoFactorCode))
-            {
-                response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                    new { enable, twoFactorCode });
-            }
-            else
-            {
-                response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                    new { });
-            }
-            */
-
             // successful?
             if (response.IsSuccessStatusCode)
             {
@@ -462,8 +421,7 @@ namespace BlazorWasmAuth.Identity
                     .ReadFromJsonAsync<TwoFactorResult>() ??
                     new()
                     { 
-                        ErrorList = 
-                            [ "There was an error processing the request." ]
+                        ErrorList = [ "There was an error processing the request." ]
                     };
             }
 
@@ -534,14 +492,6 @@ namespace BlazorWasmAuth.Identity
                 Succeeded = false,
                 ErrorList = [ "Invalid recovery code." ]
             };
-        }
-
-        private class HttpResponseContent
-        {
-            public string? Type { get; set; }
-            public string? Title { get; set; }
-            public int Status {  get; set; }
-            public string? Detail {  get; set; }
         }
     }
 }
