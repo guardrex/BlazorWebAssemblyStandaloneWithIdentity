@@ -145,7 +145,7 @@ namespace BlazorWasmAuth.Identity
                         return new FormResult
                         {
                             Succeeded = false,
-                            ErrorList = ["RequiresTwoFactor"]
+                            ErrorList = [ "RequiresTwoFactor" ]
                         };
                     }
                 }
@@ -197,7 +197,7 @@ namespace BlazorWasmAuth.Identity
             return new FormResult
             {
                 Succeeded = false,
-                ErrorList = [ "Invalid email, password, or two-factor code."]
+                ErrorList = [ "Invalid two-factor code." ]
             };
         }
 
@@ -544,7 +544,7 @@ namespace BlazorWasmAuth.Identity
             return new FormResult
             {
                 Succeeded = false,
-                ErrorList = [ "Invalid email, password, or two-factor code." ]
+                ErrorList = [ "Invalid recovery code." ]
             };
         }
 

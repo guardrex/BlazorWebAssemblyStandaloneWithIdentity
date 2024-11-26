@@ -30,59 +30,37 @@
         <div class="row">
             <div class="col">
                 <section>
-                    <EditForm Model="Input" 
-                              method="post" 
-                              OnValidSubmit="LoginUser" 
-                              FormName="login" 
-                              Context="editform_context">
+                    <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" Context="editform_context">
                         <DataAnnotationsValidator />
                         <h2>Use a local account to log in.</h2>
                         <hr />
                         <div style="display:@(requiresTwoFactor ? "none" : "block")">
                             <div class="form-floating mb-3">
-                                <InputText 
-                                    @bind-Value="Input.Email" 
-                                    id="Input.Email" 
-                                    class="form-control" 
-                                    autocomplete="username" 
-                                    aria-required="true" 
-                                    placeholder="name@example.com" />
+                                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" 
+                                    autocomplete="username" aria-required="true" placeholder="name@example.com" />
                                 <label for="Input.Email" class="form-label">
                                     Email
                                 </label>
-                                <ValidationMessage 
-                                    For="() => Input.Email" 
-                                    class="text-danger" />
+                                <ValidationMessage For="() => Input.Email" class="text-danger" />
                             </div>
                             <div class="form-floating mb-3">
-                                <InputText 
-                                    type="password" 
-                                    @bind-Value="Input.Password" 
-                                    id="Input.Password" 
-                                    class="form-control" 
-                                    autocomplete="current-password" 
-                                    aria-required="true" 
+                                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" 
+                                    class="form-control" autocomplete="current-password" aria-required="true" 
                                     placeholder="password" />
                                 <label for="Input.Password" class="form-label">
                                     Password
                                 </label>
-                                <ValidationMessage 
-                                    For="() => Input.Password" 
-                                    class="text-danger" />
+                                <ValidationMessage For="() => Input.Password" class="text-danger" />
                             </div>
                         </div>
                         <div style="display:@(requiresTwoFactor ? "block" : "none")">
                             <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.TwoFactorCode" 
-                                    id="Input.TwoFactorCode" class="form-control" 
-                                    autocomplete="off" 
-                                    placeholder="###### or #####-##### (dash required)" />
+                                <InputText @bind-Value="Input.TwoFactorCode" id="Input.TwoFactorCode" class="form-control" 
+                                    autocomplete="off" placeholder="###### or #####-##### (dash required)" />
                                 <label for="Input.TwoFactorCode" class="form-label">
                                     2FA Authenticator Code or Recovery Code
                                 </label>
-                                <ValidationMessage 
-                                    For="() => Input.TwoFactorCode" 
-                                    class="text-danger" />
+                                <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
                             </div>
                         </div>
                         <div>
@@ -90,7 +68,7 @@
                                 Log in
                             </button>
                         </div>
-                        <div>
+                        <div class="mt-3">
                             <p>
                                 <a href="forgot-password">Forgot password</a>
                             </p>
@@ -124,20 +102,17 @@
             {
                 if (Input.TwoFactorCode.Length == 6)
                 {
-                    formResult = await Acct.LoginTwoFactorCodeAsync(
-                        Input.Email, Input.Password, Input.TwoFactorCode);
+                    formResult = await Acct.LoginTwoFactorCodeAsync(Input.Email, Input.Password, Input.TwoFactorCode);
                 }
                 else
                 {
-                    formResult = await Acct.LoginTwoFactorRecoveryCodeAsync(
-                        Input.Email, Input.Password, Input.TwoFactorCode);
+                    formResult = await Acct.LoginTwoFactorRecoveryCodeAsync(Input.Email, Input.Password, Input.TwoFactorCode);
 
-                    var twoFactorResult = await Acct.TwoFactorRequest();
-                    recoveryCodesRemainingMessage =
-                        $"You have {twoFactorResult.RecoveryCodesLeft} recovery " +
-                        "codes remaining.";
-
-                    StateHasChanged();
+                    if (formResult.Succeeded)
+                    {
+                        var twoFactorResult = await Acct.TwoFactorRequest();
+                        recoveryCodesRemainingMessage = $"You have {twoFactorResult.RecoveryCodesLeft} recovery codes remaining.";
+                    }
                 }
             }
         }
