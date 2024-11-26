@@ -110,7 +110,7 @@
 
                     if (formResult.Succeeded)
                     {
-                        var twoFactorResult = await Acct.TwoFactorRequest(new());
+                        var twoFactorResult = await Acct.TwoFactorRequestAsync(new());
                         recoveryCodesRemainingMessage = $"You have {twoFactorResult.RecoveryCodesLeft} recovery codes remaining.";
                     }
                 }

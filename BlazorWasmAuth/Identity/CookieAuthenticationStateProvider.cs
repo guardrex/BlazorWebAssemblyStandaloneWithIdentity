@@ -407,7 +407,7 @@ namespace BlazorWasmAuth.Identity
         /// </summary>
         /// <param name="twoFactorRequest">A set of optional parameters in <see cref="TwoFactorRequest"/> for 2FA management requests.</param>
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
-        public async Task<TwoFactorResult> TwoFactorRequest(TwoFactorRequest twoFactorRequest)
+        public async Task<TwoFactorResult> TwoFactorRequestAsync(TwoFactorRequest twoFactorRequest)
         {
             string[] defaultDetail = 
                 [ "An unknown error prevented two-factor authentication." ];

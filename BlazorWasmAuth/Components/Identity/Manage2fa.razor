@@ -112,7 +112,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(new());
+        twoFactorResult = await Acct.TwoFactorRequestAsync(new());
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -140,17 +140,17 @@
 
     private async Task Disable2FA()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(new() { ResetSharedKey = true });
+        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { ResetSharedKey = true });
     }
 
     private async Task GenerateNewCodes()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(new() { ResetRecoveryCodes = true });
+        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { ResetRecoveryCodes = true });
     }
 
     private async Task OnValidSubmitAsync()
     {
-        twoFactorResult = await Acct.TwoFactorRequest(new() { Enable = true, TwoFactorCode = Input.Code });
+        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { Enable = true, TwoFactorCode = Input.Code });
         Input.Code = string.Empty;
     }
 

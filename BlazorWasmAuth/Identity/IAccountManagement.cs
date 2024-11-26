@@ -76,7 +76,7 @@ namespace BlazorWasmAuth.Identity
         /// <param name="resetRecoveryCodes">A flag indicating if the recovery codes should be reset.</param>
         /// <param name="forgetMachine">A flag indicating if the machine should be forgotten.</param>
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
-        public Task<TwoFactorResult> TwoFactorRequest(
+        public Task<TwoFactorResult> TwoFactorRequestAsync(
             TwoFactorRequest twoFactorRequest);
 
         /// <summary>
