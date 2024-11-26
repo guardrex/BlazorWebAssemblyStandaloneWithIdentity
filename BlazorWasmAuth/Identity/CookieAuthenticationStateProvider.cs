@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using BlazorWasmAuth.Identity.Models;
 using System.Text;
 using System.Net;
-using System.Runtime.InteropServices.Marshalling;
+using System.Text.Json.Serialization;
 
 namespace BlazorWasmAuth.Identity
 {
@@ -25,6 +25,7 @@ namespace BlazorWasmAuth.Identity
             new()
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             };
 
         /// <summary>
@@ -419,91 +420,78 @@ namespace BlazorWasmAuth.Identity
         /// <param name="resetRecoveryCodes">A flag indicating if the recovery codes should be reset.</param>
         /// <param name="forgetMachine">A flag indicating if the machine should be forgotten.</param>
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
-        public async Task<TwoFactorResult> TwoFactorRequest(
-            bool enable,
-            string twoFactorCode,
-            bool resetSharedKey,
-            bool resetRecoveryCodes,
-            bool forgetMachine)
+        public async Task<TwoFactorResult> TwoFactorRequest(TwoFactorRequest twoFactorRequest)
         {
             string[] defaultDetail = 
                 [ "An unknown error prevented two-factor authentication." ];
 
-            try
+            var response = await httpClient.PostAsJsonAsync("manage/2fa", twoFactorRequest, jsonSerializerOptions);
+
+            /*
+            if (resetSharedKey)
             {
-                HttpResponseMessage response;
-
-                if (resetSharedKey)
-                {
-                    response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { resetSharedKey });
-                }
-                else if (resetRecoveryCodes)
-                {
-                    response = await httpClient.PostAsJsonAsync("manage/2fa",
-                        new { resetRecoveryCodes });
-                }
-                else if (forgetMachine)
-                {
-                    response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { forgetMachine });
-                }
-                else if (!string.IsNullOrEmpty(twoFactorCode))
-                {
-                    response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { enable, twoFactorCode });
-                }
-                else
-                {
-                    response = await httpClient.PostAsJsonAsync("manage/2fa", 
-                        new { });
-                }
-
-                // successful?
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content
-                        .ReadFromJsonAsync<TwoFactorResult>() ??
-                        new()
-                        { 
-                            ErrorList = 
-                                [ "There was an error processing the request." ]
-                        };
-                }
-
-                // body should contain details about why it failed
-                var details = await response.Content.ReadAsStringAsync();
-                var problemDetails = JsonDocument.Parse(details);
-                var errors = new List<string>();
-                var errorList = problemDetails.RootElement.GetProperty("errors");
-
-                foreach (var errorEntry in errorList.EnumerateObject())
-                {
-                    if (errorEntry.Value.ValueKind == JsonValueKind.String)
-                    {
-                        errors.Add(errorEntry.Value.GetString()!);
-                    }
-                    else if (errorEntry.Value.ValueKind == JsonValueKind.Array)
-                    {
-                        errors.AddRange(
-                            errorEntry.Value.EnumerateArray().Select(
-                                e => e.GetString() ?? string.Empty)
-                            .Where(e => !string.IsNullOrEmpty(e)));
-                    }
-                }
-
-                // return the error list
-                return new TwoFactorResult
-                {
-                    ErrorList = problemDetails == null ? defaultDetail : [.. errors]
-                };
+                response = await httpClient.PostAsJsonAsync("manage/2fa", 
+                    new { resetSharedKey });
             }
-            catch { }
+            else if (resetRecoveryCodes)
+            {
+                response = await httpClient.PostAsJsonAsync("manage/2fa",
+                    new { resetRecoveryCodes });
+            }
+            else if (forgetMachine)
+            {
+                response = await httpClient.PostAsJsonAsync("manage/2fa", 
+                    new { forgetMachine });
+            }
+            else if (!string.IsNullOrEmpty(twoFactorCode))
+            {
+                response = await httpClient.PostAsJsonAsync("manage/2fa", 
+                    new { enable, twoFactorCode });
+            }
+            else
+            {
+                response = await httpClient.PostAsJsonAsync("manage/2fa", 
+                    new { });
+            }
+            */
 
-            // unknown error
+            // successful?
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content
+                    .ReadFromJsonAsync<TwoFactorResult>() ??
+                    new()
+                    { 
+                        ErrorList = 
+                            [ "There was an error processing the request." ]
+                    };
+            }
+
+            // body should contain details about why it failed
+            var details = await response.Content.ReadAsStringAsync();
+            var problemDetails = JsonDocument.Parse(details);
+            var errors = new List<string>();
+            var errorList = problemDetails.RootElement.GetProperty("errors");
+
+            foreach (var errorEntry in errorList.EnumerateObject())
+            {
+                if (errorEntry.Value.ValueKind == JsonValueKind.String)
+                {
+                    errors.Add(errorEntry.Value.GetString()!);
+                }
+                else if (errorEntry.Value.ValueKind == JsonValueKind.Array)
+                {
+                    errors.AddRange(
+                        errorEntry.Value.EnumerateArray().Select(
+                            e => e.GetString() ?? string.Empty)
+                        .Where(e => !string.IsNullOrEmpty(e)));
+                }
+            }
+
+            // return the error list
             return new TwoFactorResult
             {
-                ErrorList = [ "There was an error processing the request." ]
+                ErrorList = problemDetails == null ? defaultDetail : [.. errors]
             };
         }
 

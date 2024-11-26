@@ -77,11 +77,7 @@ namespace BlazorWasmAuth.Identity
         /// <param name="forgetMachine">A flag indicating if the machine should be forgotten.</param>
         /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
         public Task<TwoFactorResult> TwoFactorRequest(
-            bool enable = false, 
-            string twoFactorCode = "", 
-            bool resetSharedKey = false, 
-            bool resetRecoveryCodes = false, 
-            bool forgetMachine = false);
+            TwoFactorRequest twoFactorRequest);
 
         /// <summary>
         /// Login service with two-factor recovery authentication.
