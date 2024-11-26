@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Start Both Projects",
+    "Projects": [
+      {
+        "Path": "Backend\\Backend.csproj",
+        "Action": "StartWithoutDebugging"
+      },
+      {
+        "Path": "BlazorWasmAuth\\BlazorWasmAuth.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
