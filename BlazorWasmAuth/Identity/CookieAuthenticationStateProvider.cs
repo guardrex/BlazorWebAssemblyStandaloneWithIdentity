@@ -406,8 +406,8 @@ namespace BlazorWasmAuth.Identity
         /// Sends requests to the two-factor authentication endpoint for two-factor account management.
         /// </summary>
         /// <param name="twoFactorRequest">A set of optional parameters in <see cref="TwoFactorRequest"/> for 2FA management requests.</param>
-        /// <returns>The result serialized to a <see cref="TwoFactorResult"/>.</returns>
-        public async Task<TwoFactorResult> TwoFactorRequestAsync(TwoFactorRequest twoFactorRequest)
+        /// <returns>The result serialized to a <see cref="TwoFactorResponse"/>.</returns>
+        public async Task<TwoFactorResponse> TwoFactorRequestAsync(TwoFactorRequest twoFactorRequest)
         {
             string[] defaultDetail = 
                 [ "An unknown error prevented two-factor authentication." ];
@@ -418,7 +418,7 @@ namespace BlazorWasmAuth.Identity
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content
-                    .ReadFromJsonAsync<TwoFactorResult>() ??
+                    .ReadFromJsonAsync<TwoFactorResponse>() ??
                     new()
                     { 
                         ErrorList = [ "There was an error processing the request." ]
@@ -447,7 +447,7 @@ namespace BlazorWasmAuth.Identity
             }
 
             // return the error list
-            return new TwoFactorResult
+            return new TwoFactorResponse
             {
                 ErrorList = problemDetails == null ? defaultDetail : [.. errors]
             };

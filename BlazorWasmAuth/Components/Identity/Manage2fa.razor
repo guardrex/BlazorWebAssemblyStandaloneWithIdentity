@@ -19,13 +19,13 @@
 <hr />
 <div class="row">
     <div class="col">
-        @if (twoFactorResult is not null)
+        @if (twoFactorResponse is not null)
         {
-            @foreach (var error in twoFactorResult.ErrorList)
+            @foreach (var error in twoFactorResponse.ErrorList)
             {
                 <div class="alert alert-danger">@error</div>
             }
-            @if (twoFactorResult.IsTwoFactorEnabled)
+            @if (twoFactorResponse.IsTwoFactorEnabled)
             {
                 <div class="alert alert-success" role="alert">
                     Two-factor authentication is enabled for your account.
@@ -35,7 +35,7 @@
                     <button @onclick="Disable2FA" class="btn btn-lg btn-primary">Disable 2FA</button>
                 </div>
 
-                @if (twoFactorResult.RecoveryCodes is null)
+                @if (twoFactorResponse.RecoveryCodes is null)
                 {
                     <div class="m-1">
                         <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
@@ -43,7 +43,7 @@
                 }
                 else
                 {
-                    <ShowRecoveryCodes RecoveryCodes="twoFactorResult.RecoveryCodes" />
+                    <ShowRecoveryCodes RecoveryCodes="twoFactorResponse.RecoveryCodes" />
                 }
             }
             else
@@ -69,14 +69,14 @@
                         </li>
                         <li>
                             <p>
-                                Scan the QR Code or enter this key <kbd>@twoFactorResult.SharedKey</kbd> into your two factor authenticator app. Spaces and casing don't matter.
+                                Scan the QR Code or enter this key <kbd>@twoFactorResponse.SharedKey</kbd> into your two-factor authenticator app. Spaces and casing don't matter.
                             </p>
                             <div @ref="qrCodeElement"></div>
                         </li>
                         <li>
                             <p>
-                                Once you have scanned the QR code or input the key above, your two factor authentication app 
-                                will provide you with a unique code. Enter the code in the confirmation box below.
+                                After you have scanned the QR code or input the key above, your two-factor authenticator app
+                                will provide you with a unique two-factor code. Enter the code in the confirmation box below.
                             </p>
                             <div class="row">
                                 <div class="col-xl-6">
@@ -101,7 +101,7 @@
 
 @code {
     private IJSObjectReference? module;
-    private TwoFactorResult twoFactorResult = new();
+    private TwoFactorResponse twoFactorResponse = new();
     private ElementReference qrCodeElement;
 
     [SupplyParameterFromForm]
@@ -112,7 +112,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        twoFactorResult = await Acct.TwoFactorRequestAsync(new());
+        twoFactorResponse = await Acct.TwoFactorRequestAsync(new());
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -122,7 +122,7 @@
             module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Identity/Manage2fa.razor.js");
         }
 
-        if (authenticationState is not null && !string.IsNullOrEmpty(twoFactorResult?.SharedKey) && module is not null)
+        if (authenticationState is not null && !string.IsNullOrEmpty(twoFactorResponse?.SharedKey) && module is not null)
         {
             var authState = await authenticationState;
             var email = authState?.User?.Identity?.Name!;
@@ -132,7 +132,7 @@
                 "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
                 UrlEncoder.Default.Encode(Config["TotpOrganizationName"]!),
                 email,
-                twoFactorResult.SharedKey);
+                twoFactorResponse.SharedKey);
 
             await module.InvokeVoidAsync("setQrCode", qrCodeElement, uri);
         }
@@ -140,17 +140,17 @@
 
     private async Task Disable2FA()
     {
-        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { ResetSharedKey = true });
+        twoFactorResponse = await Acct.TwoFactorRequestAsync(new() { ResetSharedKey = true });
     }
 
     private async Task GenerateNewCodes()
     {
-        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { ResetRecoveryCodes = true });
+        twoFactorResponse = await Acct.TwoFactorRequestAsync(new() { ResetRecoveryCodes = true });
     }
 
     private async Task OnValidSubmitAsync()
     {
-        twoFactorResult = await Acct.TwoFactorRequestAsync(new() { Enable = true, TwoFactorCode = Input.Code });
+        twoFactorResponse = await Acct.TwoFactorRequestAsync(new() { Enable = true, TwoFactorCode = Input.Code });
         Input.Code = string.Empty;
     }
 

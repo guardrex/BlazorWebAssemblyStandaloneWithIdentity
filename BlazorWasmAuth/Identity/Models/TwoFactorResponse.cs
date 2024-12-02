@@ -1,6 +1,6 @@
 ﻿namespace BlazorWasmAuth.Identity.Models;
 
-public class TwoFactorResult
+public class TwoFactorResponse
 {
     public string SharedKey { get; set; } = string.Empty;
     public int RecoveryCodesLeft { get; set; } = 0;
