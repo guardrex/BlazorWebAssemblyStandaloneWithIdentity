@@ -19,81 +19,88 @@
 <hr />
 <div class="row">
     <div class="col">
-        @if (twoFactorResponse is not null)
+        @if (loading)
         {
-            @foreach (var error in twoFactorResponse.ErrorList)
+            <p>Loading ...</p>
+        }
+        else
+        {
+            @if (twoFactorResponse is not null)
             {
-                <div class="alert alert-danger">@error</div>
-            }
-            @if (twoFactorResponse.IsTwoFactorEnabled)
-            {
-                <div class="alert alert-success" role="alert">
-                    Two-factor authentication is enabled for your account.
-                </div>
-
-                <div class="m-1">
-                    <button @onclick="Disable2FA" class="btn btn-lg btn-primary">Disable 2FA</button>
-                </div>
-
-                @if (twoFactorResponse.RecoveryCodes is null)
+                @foreach (var error in twoFactorResponse.ErrorList)
                 {
-                    <div class="m-1">
-                        <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
+                    <div class="alert alert-danger">@error</div>
+                }
+                @if (twoFactorResponse.IsTwoFactorEnabled)
+                {
+                    <div class="alert alert-success" role="alert">
+                        Two-factor authentication is enabled for your account.
                     </div>
+
+                    <div class="m-1">
+                        <button @onclick="Disable2FA" class="btn btn-lg btn-primary">Disable 2FA</button>
+                    </div>
+
+                    @if (twoFactorResponse.RecoveryCodes is null)
+                    {
+                        <div class="m-1">
+                            <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <ShowRecoveryCodes RecoveryCodes="twoFactorResponse.RecoveryCodes" />
+                    }
                 }
                 else
                 {
-                    <ShowRecoveryCodes RecoveryCodes="twoFactorResponse.RecoveryCodes" />
-                }
-            }
-            else
-            {
-                <h3>Configure authenticator app</h3>
-                <div>
-                    <p>To use an authenticator app:</p>
-                    <ol class="list">
-                        <li>
-                            <p>
-                                Download a two-factor authenticator app, such as either of the following:
-                                <ul>
-                                    <li>
-                                        Microsoft Authenticator for
-                                        <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a>
-                                    </li>
-                                    <li>
-                                        Google Authenticator for
-                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>
-                                    </li>
-                                </ul>
-                            </p>
-                        </li>
-                        <li>
-                            <p>
-                                Scan the QR Code or enter this key <kbd>@twoFactorResponse.SharedKey</kbd> into your two-factor authenticator app. Spaces and casing don't matter.
-                            </p>
-                            <div @ref="qrCodeElement"></div>
-                        </li>
-                        <li>
-                            <p>
-                                After you have scanned the QR code or input the key above, your two-factor authenticator app
-                                will provide you with a unique two-factor code. Enter the code in the confirmation box below.
-                            </p>
-                            <div class="row">
-                                <div class="col-xl-6">
-                                    <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
-                                        <DataAnnotationsValidator />
-                                        <div class="form-floating mb-3">
-                                            <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code" />
-                                            <label for="Input.Code" class="control-label form-label">Verification Code</label>
-                                            <ValidationMessage For="() => Input.Code" class="text-danger" />
-                                        </div>
-                                        <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
-                                    </EditForm>
+                    <h3>Configure authenticator app</h3>
+                    <div>
+                        <p>To use an authenticator app:</p>
+                        <ol class="list">
+                            <li>
+                                <p>
+                                    Download a two-factor authenticator app, such as either of the following:
+                                    <ul>
+                                        <li>
+                                            Microsoft Authenticator for
+                                            <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a>
+                                        </li>
+                                        <li>
+                                            Google Authenticator for
+                                            <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>
+                                        </li>
+                                    </ul>
+                                </p>
+                            </li>
+                            <li>
+                                <p>
+                                    Scan the QR Code or enter this key <kbd>@twoFactorResponse.SharedKey</kbd> into your two-factor authenticator app. Spaces and casing don't matter.
+                                </p>
+                                <div @ref="qrCodeElement"></div>
+                            </li>
+                            <li>
+                                <p>
+                                    After you have scanned the QR code or input the key above, your two-factor authenticator app
+                                    will provide you with a unique two-factor code. Enter the code in the confirmation box below.
+                                </p>
+                                <div class="row">
+                                    <div class="col-xl-6">
+                                        <EditForm Model="Input" FormName="send-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+                                            <DataAnnotationsValidator />
+                                            <div class="form-floating mb-3">
+                                                <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control" autocomplete="off" placeholder="Enter the code" />
+                                                <label for="Input.Code" class="control-label form-label">Verification Code</label>
+                                                <ValidationMessage For="() => Input.Code" class="text-danger" />
+                                            </div>
+                                            <button type="submit" class="w-100 btn btn-lg btn-primary">Verify</button>
+                                        </EditForm>
+                                    </div>
                                 </div>
-                            </div>
-                        </li>
-                    </ol>
-                </div>
+                            </li>
+                        </ol>
+                    </div>
+                }
             }
         }
     </div>
@@ -103,6 +110,7 @@
     private IJSObjectReference? module;
     private TwoFactorResponse twoFactorResponse = new();
     private ElementReference qrCodeElement;
+    private bool loading = true;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
@@ -113,6 +121,7 @@
     protected override async Task OnInitializedAsync()
     {
         twoFactorResponse = await Acct.TwoFactorRequestAsync(new());
+        loading = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -103,6 +103,11 @@
                 if (Input.TwoFactorCode.Length == 6)
                 {
                     formResult = await Acct.LoginTwoFactorCodeAsync(Input.Email, Input.Password, Input.TwoFactorCode);
+
+                    //if (formResult.Succeeded)
+                    //{
+                    //    var forgetMachine = await Acct.TwoFactorRequestAsync(new() { ForgetMachine = true });
+                    //}
                 }
                 else
                 {
