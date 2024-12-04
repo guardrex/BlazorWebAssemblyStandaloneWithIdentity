@@ -37,7 +37,7 @@
                         <div style="display:@(requiresTwoFactor ? "none" : "block")">
                             <div class="form-floating mb-3">
                                 <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" 
-                                    autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                                autocomplete="username" aria-required="true" placeholder="name@example.com" />
                                 <label for="Input.Email" class="form-label">
                                     Email
                                 </label>
@@ -45,8 +45,8 @@
                             </div>
                             <div class="form-floating mb-3">
                                 <InputText type="password" @bind-Value="Input.Password" id="Input.Password" 
-                                    class="form-control" autocomplete="current-password" aria-required="true" 
-                                    placeholder="password" />
+                                class="form-control" autocomplete="current-password" aria-required="true" 
+                                placeholder="password" />
                                 <label for="Input.Password" class="form-label">
                                     Password
                                 </label>
@@ -55,12 +55,12 @@
                         </div>
                         <div style="display:@(requiresTwoFactor ? "block" : "none")">
                             <div class="form-floating mb-3">
-                                <InputText @bind-Value="Input.TwoFactorCode" id="Input.TwoFactorCode" class="form-control" 
-                                    autocomplete="off" placeholder="###### or #####-##### (dash required)" />
+                                <InputText @bind-Value="Input.TwoFactorCodeOrRecoveryCode" id="Input.TwoFactorCodeOrRecoveryCode" class="form-control"
+                                           autocomplete="off" placeholder="###### or #####-##### (dash required)" />
                                 <label for="Input.TwoFactorCode" class="form-label">
                                     2FA Authenticator Code or Recovery Code
                                 </label>
-                                <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
+                                <ValidationMessage For="() => Input.TwoFactorCodeOrRecoveryCode" class="text-danger" />
                             </div>
                         </div>
                         <div>
@@ -98,11 +98,14 @@
     {
         if (requiresTwoFactor)
         {
-            if (!string.IsNullOrEmpty(Input.TwoFactorCode))
+            if (!string.IsNullOrEmpty(Input.TwoFactorCodeOrRecoveryCode))
             {
-                if (Input.TwoFactorCode.Length == 6)
+                // The [RegularExpression] data annotation ensures that the input
+                // is either a six-digit authenticator code (######) or an
+                // eleven-character alphanumeric recovery code (#####-#####)
+                if (Input.TwoFactorCodeOrRecoveryCode.Length == 6)
                 {
-                    formResult = await Acct.LoginTwoFactorCodeAsync(Input.Email, Input.Password, Input.TwoFactorCode);
+                    formResult = await Acct.LoginTwoFactorCodeAsync(Input.Email, Input.Password, Input.TwoFactorCodeOrRecoveryCode);
 
                     //if (formResult.Succeeded)
                     //{
@@ -111,7 +114,7 @@
                 }
                 else
                 {
-                    formResult = await Acct.LoginTwoFactorRecoveryCodeAsync(Input.Email, Input.Password, Input.TwoFactorCode);
+                    formResult = await Acct.LoginTwoFactorRecoveryCodeAsync(Input.Email, Input.Password, Input.TwoFactorCodeOrRecoveryCode);
 
                     if (formResult.Succeeded)
                     {
@@ -120,13 +123,26 @@
                     }
                 }
             }
+            else
+            {
+                formResult = 
+                    new FormResult
+                    {
+                        Succeeded = false,
+                        ErrorList = [ "Invalid two-factor code." ]
+                    };
+            }
         }
         else
         {
             formResult = await Acct.LoginAsync(Input.Email, Input.Password);
             requiresTwoFactor = formResult.ErrorList.Contains("RequiresTwoFactor");
-            Input.TwoFactorCode = string.Empty;
-            formResult.ErrorList = [];
+            Input.TwoFactorCodeOrRecoveryCode = string.Empty;
+
+            if (requiresTwoFactor)
+            {
+                formResult.ErrorList = [];
+            }
         }
 
         if (formResult.Succeeded && !string.IsNullOrEmpty(ReturnUrl))
@@ -147,12 +163,11 @@
         [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
         [RegularExpression(@"^([0-9]{6})|([A-Z0-9]{5}[-]{1}[A-Z0-9]{5})$", 
             ErrorMessage = "Must be a six-digit authenticator code (######) or " +
             "eleven-character alphanumeric recovery code (#####-#####, dash " +
             "required)")]
-        [Display(Name = "Two-factor code")]
-        public string TwoFactorCode { get; set; } = "123456";
+        [Display(Name = "Two-factor Code or Recovery Code")]
+        public string TwoFactorCodeOrRecoveryCode { get; set; } = string.Empty;
     }
 }
