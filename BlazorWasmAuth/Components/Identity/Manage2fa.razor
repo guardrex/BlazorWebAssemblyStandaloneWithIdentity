@@ -3,10 +3,10 @@
 @using System.Globalization
 @using System.Text
 @using System.Text.Encodings.Web
+@using Net.Codecrete.QrCodeGenerator
 @using BlazorWasmAuth.Identity
 @using BlazorWasmAuth.Identity.Models
 @attribute [Authorize]
-@implements IAsyncDisposable
 @inject IAccountManagement Acct
 @inject IAuthorizationService AuthorizationService
 @inject IConfiguration Config
@@ -77,7 +77,12 @@
                                 <p>
                                     Scan the QR Code or enter this key <kbd>@twoFactorResponse.SharedKey</kbd> into your two-factor authenticator app. Spaces and casing don't matter.
                                 </p>
-                                <div @ref="qrCodeElement"></div>
+                                <div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="300" width="300" stroke="none" version="1.1" viewBox="0 0 50 50">
+                                        <rect width="300" height="300" fill="#ffffff" />
+                                        <path d="@svgGraphicsPath" fill="#000000" />
+                                    </svg>
+                                </div>
                             </li>
                             <li>
                                 <p>
@@ -107,10 +112,9 @@
 </div>
 
 @code {
-    private IJSObjectReference? module;
     private TwoFactorResponse twoFactorResponse = new();
-    private ElementReference qrCodeElement;
     private bool loading = true;
+    private string? svgGraphicsPath;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
@@ -121,35 +125,34 @@
     protected override async Task OnInitializedAsync()
     {
         twoFactorResponse = await Acct.TwoFactorRequestAsync(new());
+        svgGraphicsPath = await GetQrCode(twoFactorResponse.SharedKey);
         loading = false;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task<string> GetQrCode(string sharedKey)
     {
-        if (firstRender)
-        {
-            module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/Identity/Manage2fa.razor.js");
-        }
-
-        if (authenticationState is not null && !string.IsNullOrEmpty(twoFactorResponse?.SharedKey) && module is not null)
+        if (authenticationState is not null && !string.IsNullOrEmpty(sharedKey))
         {
             var authState = await authenticationState;
             var email = authState?.User?.Identity?.Name!;
-
             var uri = string.Format(
                 CultureInfo.InvariantCulture,
                 "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6",
                 UrlEncoder.Default.Encode(Config["TotpOrganizationName"]!),
                 email,
                 twoFactorResponse.SharedKey);
+            var qr = QrCode.EncodeText(uri, QrCode.Ecc.Medium);
 
-            await module.InvokeVoidAsync("setQrCode", qrCodeElement, uri);
+            return qr.ToGraphicsPath();
         }
+
+        return string.Empty;
     }
 
     private async Task Disable2FA()
     {
         twoFactorResponse = await Acct.TwoFactorRequestAsync(new() { ResetSharedKey = true });
+        svgGraphicsPath = await GetQrCode(twoFactorResponse.SharedKey);
     }
 
     private async Task GenerateNewCodes()
@@ -170,13 +173,5 @@
         [DataType(DataType.Text)]
         [Display(Name = "Verification Code")]
         public string Code { get; set; } = string.Empty;
-    }
-
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        if (module is not null)
-        {
-            await module.DisposeAsync();
-        }
     }
 }
