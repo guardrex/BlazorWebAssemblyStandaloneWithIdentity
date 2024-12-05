@@ -15,12 +15,6 @@
         <div class="alert alert-success">
             You're logged in as @context.User.Identity?.Name.
         </div>
-        @if (!string.IsNullOrEmpty(recoveryCodesRemainingMessage))
-        {
-            <div class="alert alert-warning">
-                @recoveryCodesRemainingMessage
-            </div>
-        }
     </Authorized>
     <NotAuthorized>
         @foreach (var error in formResult.ErrorList)
@@ -86,7 +80,6 @@
 @code {
     private FormResult formResult = new();
     private bool requiresTwoFactor;
-    private string? recoveryCodesRemainingMessage;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new() { Email = "leela@contoso.com", Password = "Passw0rd!" };
@@ -119,7 +112,6 @@
                     if (formResult.Succeeded)
                     {
                         var twoFactorResponse = await Acct.TwoFactorRequestAsync(new());
-                        recoveryCodesRemainingMessage = $"You have {twoFactorResponse.RecoveryCodesLeft} recovery codes remaining.";
                     }
                 }
             }

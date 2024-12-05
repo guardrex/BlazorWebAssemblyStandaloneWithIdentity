@@ -16,7 +16,8 @@ namespace BlazorWasmAuth.Identity
     /// Create a new instance of the auth provider.
     /// </remarks>
     /// <param name="httpClientFactory">Factory to retrieve auth client.</param>
-    public class CookieAuthenticationStateProvider(IHttpClientFactory httpClientFactory) : AuthenticationStateProvider, IAccountManagement
+    public class CookieAuthenticationStateProvider(IHttpClientFactory httpClientFactory, ILogger<CookieAuthenticationStateProvider> logger) 
+        : AuthenticationStateProvider, IAccountManagement
     {
         /// <summary>
         /// Map the JavaScript-formatted properties to C#-formatted classes.
@@ -98,7 +99,10 @@ namespace BlazorWasmAuth.Identity
                     ErrorList = problemDetails == null ? defaultDetail : [.. errors]
                 };
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return new FormResult
@@ -151,7 +155,10 @@ namespace BlazorWasmAuth.Identity
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return new FormResult
@@ -192,7 +199,10 @@ namespace BlazorWasmAuth.Identity
                     return new FormResult { Succeeded = true };
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return new FormResult
@@ -280,7 +290,10 @@ namespace BlazorWasmAuth.Identity
                     authenticated = true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // return the state
             return new AuthenticationState(user);
@@ -327,7 +340,10 @@ namespace BlazorWasmAuth.Identity
                     return true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return false;
@@ -392,7 +408,10 @@ namespace BlazorWasmAuth.Identity
                     ErrorList = problemDetails == null ? defaultDetail : [.. errors]
                 };
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return new FormResult
@@ -484,7 +503,10 @@ namespace BlazorWasmAuth.Identity
                     return new FormResult { Succeeded = true };
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "App error");
+            }
 
             // unknown error
             return new FormResult

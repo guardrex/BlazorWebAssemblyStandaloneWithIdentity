@@ -43,6 +43,9 @@
                     @if (twoFactorResponse.RecoveryCodes is null)
                     {
                         <div class="m-1">
+                            Recovery Codes Remaining: @twoFactorResponse.RecoveryCodesLeft
+                        </div>
+                        <div class="m-1">
                             <button @onclick="GenerateNewCodes" class="btn btn-lg btn-primary">Generate New Recovery Codes</button>
                         </div>
                     }
